@@ -1,7 +1,7 @@
-# JetiMiniVario
+# JetiMiniVario2
 
 ## What it is
-JetiMiniVario is a variometer and altimeter.
+JetiMiniVario2 is a variometer and altimeter.
 Optionally, a Ublox GNSS module (M8 or M10) can be connected.
 
 JetiMiniVario was developed to detect smallest air movements with a DLG.
@@ -17,13 +17,13 @@ The DMA is used in order to achieve a proper timing without collisions.
 
 Communication with the sensor boards is done over I2C at 500kHz. 
 
-JetiMiniVario is built from the following components:
+JetiMiniVario2 is built from the following components:
 
  * A MCU board Seeed Studio XIAO (SAMD21G18)
 
- * One or two GY-63 boards with the MS5611 Barometric Pressure Sensor
+ * One or two shield boards with the SPL06-001 Barometric Pressure Sensor
 
- * A GNSS device with a module from Ublox. (i.e. Beitian BN-XXX BE-XXX) 
+ * A GNSS device with a M8 or M10 module from Ublox. (i.e. Beitian BN-XXX BE-XXX, FlyfishRC M10 mini, ...) 
 
 JetiMiniVario is optimized for very short response times
 with low noise. Due to a free RC channel the filtering can be
@@ -61,8 +61,7 @@ to your individual needs. It could be a very small thing with the MCU-board only
 or the full featured device with a baseboard.
 
 ![IMG01](doc/IMG01.png)  
-![IMG02](doc/IMG02.png) 
-
+![IMG02](doc/IMG02.png)  
 
 The Sensor PCB has a Solder Jumper for changing the I2C address.
 If 2 PCB's are in use, the sensor vwith the changed address becomes the
@@ -75,28 +74,15 @@ In order to encapsulate a volume by the 2 sensor PCB's
 make both PCBs gasproof by using some epoxy on this sides:  
 ![IMG03](doc/IMG03.png)  
 
-The sensor PCB's then can be stacked and encapsulate an air volume together with small epoxy stripes:  
+The sensor PCB's then can be stacked and encapsulate an air volume together with small epoxy stripes
+Please refer to first version of JetiMiniVario:  
 ![IMG04](doc/IMG04.png)  
 
-The wires are then connected as shown:  
-![IMG05](doc/IMG05.png)  
-
+Sensor PCB:  
 ![IMG06](doc/IMG06.png)  
 
-External connections are as shown here:  
-![IMG07](doc/IMG07.png)  
-
-Ready to use product:  
-![IMG08](doc/IMG08.png)  
-
-Voltage Divider Lower Resistor:  
-![IMG09](doc/IMG09.png)  
-
-Sensor PCB:  
-![IMG10](doc/IMG11.png)  
-
 Base PCB:  
-![IMG11](doc/IMG12.png)  
+![IMG07](doc/IMG07.png)  
 
 ## Electrical limits
 
@@ -117,12 +103,12 @@ by the 5V because they have their own LDO 3.3V regulators.
 ### Libraries
 
 The software uses two libraries:
-* Arduino-MS5611-Interrupt
+* DPS
 * JetiExBus
 
 To load the two libs at the same time you can use this command line:
 
-git clone --recursive https://github.com/nichtgedacht/JetiMiniVario.git 
+git clone --recursive https://github.com/nichtgedacht/JetiMiniVario2.git 
  
 ### IDE 
  
