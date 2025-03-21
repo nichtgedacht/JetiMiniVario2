@@ -1,0 +1,6 @@
+[submodule "lib/JetiExBus"]
+	path = lib/JetiExBus
+	url = https://github.com/nichtgedacht/JetiExBus.git
+[submodule "lib/DPS"]
+	path = lib/DPS
+	url = https://github.com/nichtgedacht/DPS.git
