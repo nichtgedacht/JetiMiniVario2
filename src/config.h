@@ -27,7 +27,8 @@ typedef struct {
 
     uint8_t prio_VARIOM;
     uint8_t prio_ALTITU;
-    uint8_t prio_VOLTAG;  
+    uint8_t prio_VOLTA1;
+    uint8_t prio_VOLTA2;
     uint8_t prio_GPSLON;
     uint8_t prio_GPSLAT;
     uint8_t prio_GPSSPD;
@@ -53,7 +54,8 @@ typedef struct {
     bool enab_GPSHAC;
     bool enab_GPSVAC;
     bool enab_GPSHEA;
-    bool enab_VOLTAG;
+    bool enab_VOLTA1;
+    bool enab_VOLTA2;
 
     uint8_t ctrl_CHANNL;
     uint8_t rset_CHANNL;

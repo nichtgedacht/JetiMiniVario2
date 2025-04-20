@@ -12,7 +12,8 @@ config_t getConf() {
         config.prio_VARIOM = 0;
         config.prio_ALTITU = 4;
 
-        config.prio_VOLTAG = 5;
+        config.prio_VOLTA1 = 5;
+        config.prio_VOLTA2 = 5;
 
         config.prio_GPSLON = 3;
         config.prio_GPSLAT = 3;
@@ -29,7 +30,8 @@ config_t getConf() {
         config.enab_VARIOM = 1;
         config.enab_ALTITU = 1;
 
-        config.enab_VOLTAG = 1;
+        config.enab_VOLTA1 = 1;
+        config.enab_VOLTA2 = 1;
 
         config.enab_GPSLON = 1;
         config.enab_GPSLAT = 1;
@@ -122,22 +124,23 @@ void showConf(config_t config, config_t flashConfig) {
 #ifndef VOLT
     SerialUSB.print(GRAY_FG);
 #endif
-    printConfValue("prio_VOLTAG:", config.prio_VOLTAG, flashConfig.prio_VOLTAG, 14, 43);
+    printConfValue("prio_VOLTA1:", config.prio_VOLTA1, flashConfig.prio_VOLTA1, 14, 43);
+    printConfValue("prio_VOLTA2:", config.prio_VOLTA2, flashConfig.prio_VOLTA2, 14, 63);
     SerialUSB.print(WHITE_FG);
 #ifndef GPS
     SerialUSB.print(GRAY_FG);
 #endif
-    printConfValue("prio_GPSLON:", config.prio_GPSLON, flashConfig.prio_GPSLON, 14, 63);
-    printConfValue("prio_GPSLAT:", config.prio_GPSLAT, flashConfig.prio_GPSLAT, 15, 3);
-    printConfValue("prio_GPSSPD:", config.prio_GPSSPD, flashConfig.prio_GPSSPD, 15, 23);
-    printConfValue("prio_GPSALT:", config.prio_GPSALT, flashConfig.prio_GPSALT, 15, 43 );
-    printConfValue("prio_GPSTIM:", config.prio_GPSTIM, flashConfig.prio_GPSTIM, 15, 63);
-    printConfValue("prio_GPSSAT:", config.prio_GPSSAT, flashConfig.prio_GPSSAT, 16, 3);
-    printConfValue("prio_GPSDIS:", config.prio_GPSDIS, flashConfig.prio_GPSDIS, 16, 23);
-    printConfValue("prio_GPSTRA:", config.prio_GPSTRA, flashConfig.prio_GPSTRA, 16, 43);
-    printConfValue("prio_GPSHAC:", config.prio_GPSHAC, flashConfig.prio_GPSHAC, 16, 63);
-    printConfValue("prio_GPSVAC:", config.prio_GPSVAC, flashConfig.prio_GPSVAC, 17, 3);
-    printConfValue("prio_GPSHEA:", config.prio_GPSHEA, flashConfig.prio_GPSHEA, 17, 23);
+    printConfValue("prio_GPSLON:", config.prio_GPSLON, flashConfig.prio_GPSLON, 15, 3);
+    printConfValue("prio_GPSLAT:", config.prio_GPSLAT, flashConfig.prio_GPSLAT, 15, 23);
+    printConfValue("prio_GPSSPD:", config.prio_GPSSPD, flashConfig.prio_GPSSPD, 15, 43);
+    printConfValue("prio_GPSALT:", config.prio_GPSALT, flashConfig.prio_GPSALT, 15, 63 );
+    printConfValue("prio_GPSTIM:", config.prio_GPSTIM, flashConfig.prio_GPSTIM, 16, 3);
+    printConfValue("prio_GPSSAT:", config.prio_GPSSAT, flashConfig.prio_GPSSAT, 16, 23);
+    printConfValue("prio_GPSDIS:", config.prio_GPSDIS, flashConfig.prio_GPSDIS, 16, 43);
+    printConfValue("prio_GPSTRA:", config.prio_GPSTRA, flashConfig.prio_GPSTRA, 16, 63);
+    printConfValue("prio_GPSHAC:", config.prio_GPSHAC, flashConfig.prio_GPSHAC, 17, 3);
+    printConfValue("prio_GPSVAC:", config.prio_GPSVAC, flashConfig.prio_GPSVAC, 17, 23);
+    printConfValue("prio_GPSHEA:", config.prio_GPSHEA, flashConfig.prio_GPSHEA, 17, 43);
     SerialUSB.print(WHITE_FG);
 #ifndef BARO
     SerialUSB.print(GRAY_FG);
@@ -148,22 +151,23 @@ void showConf(config_t config, config_t flashConfig) {
 #ifndef VOLT
     SerialUSB.print(GRAY_FG);
 #endif
-    printConfValue("enab_VOLTAG:", config.enab_VOLTAG, flashConfig.enab_VOLTAG, 19, 43);
+    printConfValue("enab_VOLTA1:", config.enab_VOLTA1, flashConfig.enab_VOLTA1, 19, 43);
+    printConfValue("enab_VOLTA2:", config.enab_VOLTA2, flashConfig.enab_VOLTA2, 19, 63);
     SerialUSB.print(WHITE_FG);
 #ifndef GPS
     SerialUSB.print(GRAY_FG);
 #endif
-    printConfValue("enab_GPSLON:", config.enab_GPSLON, flashConfig.enab_GPSLON, 19, 63);
-    printConfValue("enab_GPSLAT:", config.enab_GPSLAT, flashConfig.enab_GPSLAT, 20, 3);
-    printConfValue("enab_GPSSPD:", config.enab_GPSSPD, flashConfig.enab_GPSSPD, 20, 23);
-    printConfValue("enab_GPSALT:", config.enab_GPSALT, flashConfig.enab_GPSALT, 20, 43);
-    printConfValue("enab_GPSTIM:", config.enab_GPSTIM, flashConfig.enab_GPSTIM, 20, 63);
-    printConfValue("enab_GPSSAT:", config.enab_GPSSAT, flashConfig.enab_GPSSAT, 21, 3);
-    printConfValue("enab_GPSDIS:", config.enab_GPSDIS, flashConfig.enab_GPSDIS, 21, 23);
-    printConfValue("enab_GPSTRA:", config.enab_GPSTRA, flashConfig.enab_GPSTRA, 21, 43);
-    printConfValue("enab_GPSHAC:", config.enab_GPSHAC, flashConfig.enab_GPSHAC, 21, 63);
-    printConfValue("enab_GPSVAC:", config.enab_GPSVAC, flashConfig.enab_GPSVAC, 22, 3);
-    printConfValue("enab_GPSHEA:", config.enab_GPSHEA, flashConfig.enab_GPSHEA, 22, 23);
+    printConfValue("enab_GPSLON:", config.enab_GPSLON, flashConfig.enab_GPSLON, 20, 3);
+    printConfValue("enab_GPSLAT:", config.enab_GPSLAT, flashConfig.enab_GPSLAT, 20, 23);
+    printConfValue("enab_GPSSPD:", config.enab_GPSSPD, flashConfig.enab_GPSSPD, 20, 43);
+    printConfValue("enab_GPSALT:", config.enab_GPSALT, flashConfig.enab_GPSALT, 20, 63);
+    printConfValue("enab_GPSTIM:", config.enab_GPSTIM, flashConfig.enab_GPSTIM, 21, 3);
+    printConfValue("enab_GPSSAT:", config.enab_GPSSAT, flashConfig.enab_GPSSAT, 21, 23);
+    printConfValue("enab_GPSDIS:", config.enab_GPSDIS, flashConfig.enab_GPSDIS, 21, 43);
+    printConfValue("enab_GPSTRA:", config.enab_GPSTRA, flashConfig.enab_GPSTRA, 21, 63);
+    printConfValue("enab_GPSHAC:", config.enab_GPSHAC, flashConfig.enab_GPSHAC, 22, 3);
+    printConfValue("enab_GPSVAC:", config.enab_GPSVAC, flashConfig.enab_GPSVAC, 22, 23);
+    printConfValue("enab_GPSHEA:", config.enab_GPSHEA, flashConfig.enab_GPSHEA, 22, 43);
     SerialUSB.print(WHITE_FG);
 #ifndef BARO
     SerialUSB.print(GRAY_FG);
@@ -321,11 +325,15 @@ void cliConf (void) {
                                 }
 #endif
 #ifdef VOLT
-                            } else if ( strncmp(key, "prio_VOLTAG", 11 ) == 0 ) {
+                            } else if ( strncmp(key, "prio_VOLTA1", 11 ) == 0 ) {
                                 if ( value <= 20 ) { 
-                                    config.prio_VOLTAG = (uint8_t) value;
+                                    config.prio_VOLTA1 = (uint8_t) value;
                                 }
-#endif
+                            } else if ( strncmp(key, "prio_VOLTA2", 11 ) == 0 ) {
+                                if ( value <= 20 ) { 
+                                    config.prio_VOLTA2 = (uint8_t) value;
+                                }
+                               #endif
 #ifdef GPS
                             } else if ( strncmp(key, "prio_GPSLON", 11 ) == 0 ) {
                                 if ( value <= 20 ) {
@@ -429,9 +437,13 @@ void cliConf (void) {
                                 }
 #endif
 #ifdef VOLT
-                            } else if ( strncmp(key, "enab_VOLTAG", 11 ) == 0 ) {
+                            } else if ( strncmp(key, "enab_VOLTA1", 11 ) == 0 ) {
                                 if ( value <= 1 ) {
-                                    config.enab_VOLTAG = (uint8_t) value;
+                                    config.enab_VOLTA1 = (uint8_t) value;
+                                }
+                            } else if ( strncmp(key, "enab_VOLTA2", 11 ) == 0 ) {
+                                if ( value <= 1 ) {
+                                    config.enab_VOLTA2 = (uint8_t) value;
                                 }
 #endif
 #ifdef BARO 

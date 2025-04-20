@@ -7,8 +7,8 @@ JetiExBusProtocol exBus;
 DPS dpsA;
 DPS dpsB;
 
-#define DPS_ADDRESS_1 0x77
-#define DPS_ADDRESS_2 0x76
+#define DPS_ADDRESS_A 0x77  // for both values or altitude only if DUAL sensor
+#define DPS_ADDRESS_B 0x76  // for vario only if DUAL sensor
 
 
 #define T1 150000.0 // base time constant
@@ -16,8 +16,9 @@ DPS dpsB;
 double t1 = T1;
 double t2 = T2;
 
-#define deltaT 30992  //measured average value, see commented out measurement
-
+#define deltaTA 30992  //measured average value, see commented out measurement
+//#define deltaTB 15977
+#define deltaTB 30992
 //char input;
 
 // set neutral
@@ -95,7 +96,8 @@ enum {
     ID_GPSHEA,
 #endif
 #ifdef VOLT
-    ID_VOLTAG,
+    ID_VOLTA1,
+    ID_VOLTA2,
 #endif
 };
 
@@ -103,19 +105,20 @@ enum {
 double referencePressureA = 0, referencePressureB = 0;
 double r_altitudeA = 0, r_altitude0A = 0, r_altitudeB = 0, r_altitude0B = 0; 
 double climbA = 0, climb0A = 0, climbB = 0, climb0B = 0; 
-double dyn_alfaA, dyn_alfaB, alfa_1, alfa_2, factor;
+double dyn_alfaA, dyn_alfaB, alfa_1A, alfa_2A, alfa_1B, alfa_2B, factor;
 
 uint32_t diff_t_A, max_diff_t_A, diff_t_B, max_diff_t_B;
 double relativeAltitudeA = 0, relativeAltitudeB = 0;
 #endif
 
 #ifdef VOLT
-double avar = 0;
+double avar1 = 0;
+double avar2 = 0;
 uint16_t GAIN_CORR;
 uint16_t OFFSET_CORR;
 bool adcStart = true;
 #endif
-//int j=0;
+int j=0;
 
 #ifdef GPS
 //-------------------- UBX ----------------------------
@@ -241,32 +244,6 @@ void DecodeUBX(uint8_t Class, uint8_t ID) {
             }
         }
 
-#ifdef DEBUG
-        SerialUSB.print((double)NavPvt.Val.lon/10000000,7);
-        SerialUSB.println("°");
-        SerialUSB.print((double)NavPvt.Val.lat/10000000,7);
-        SerialUSB.println("°");
-        SerialUSB.print( (double)NavPvt.Val.hMSL  / 1000 ,3);
-        SerialUSB.println("m (MSL)");
-        SerialUSB.print( (double)NavPvt.Val.height / 1000 ,3);
-        SerialUSB.println("m (above Ellipsoid)");
-        SerialUSB.print((double)NavPvt.Val.gSpeed / 1000, 3);
-        SerialUSB.println("m/s");
-        SerialUSB.print(NavPvt.Val.year);
-        SerialUSB.print("/");
-        SerialUSB.print(NavPvt.Val.month);
-        SerialUSB.print("/");
-        SerialUSB.println(NavPvt.Val.day);
-        SerialUSB.print(NavPvt.Val.hour);
-        SerialUSB.print(":");
-        SerialUSB.print(NavPvt.Val.min);
-        SerialUSB.print(":");
-        SerialUSB.println(NavPvt.Val.sec);
-        SerialUSB.print(distanceHome(lon, lat));
-        SerialUSB.println("m");
-        SerialUSB.print(distanceTravel(lon, lat));
-        SerialUSB.println("m");
-#endif
         exBus.SetSensorValueGPS (ID_GPSLAT, false, lat, valid);
         exBus.SetSensorValueGPS (ID_GPSLON, true,  lon, valid);
         exBus.SetSensorValue (ID_GPSALT, round(NavPvt.Val.hMSL/100), valid);
@@ -486,10 +463,10 @@ void altiZero(void) {
 void WDT_Handler() {
 
 #ifdef SERVO
-//    if ( cfg.fuse_WDTIME == 1) {
-//       cfg.fuse_WDTIME = 0;
-//       writeConfig(cfg);
-//    }
+    if ( cfg.fuse_WDTIME == 1) {
+       cfg.fuse_WDTIME = 0;
+       writeConfig(cfg);
+    }
 #endif
 
     wdTimeout = true;    // set here for short block and timely reset of WDT
@@ -504,6 +481,8 @@ void WDT_Handler() {
 }
 
 void setup () {
+
+    // delay(10000);
 
 #if defined (BARO) || defined (GPS)
     uint8_t i = 0;
@@ -546,7 +525,8 @@ void setup () {
         { ID_GPSHEA,    "GPS Heading",   "deg",  JetiSensor::TYPE_14b, 1,         cfg.prio_GPSDIS },
 #endif
 #ifdef VOLT
-        { ID_VOLTAG,    "Voltage",       "V",    JetiSensor::TYPE_14b, 2,         cfg.prio_VOLTAG },
+        { ID_VOLTA1,    "Voltage1",       "V",    JetiSensor::TYPE_14b, 2,         cfg.prio_VOLTA1 },
+        { ID_VOLTA2,    "Voltage2",       "V",    JetiSensor::TYPE_14b, 2,         cfg.prio_VOLTA2 },
 #endif
         0                           // end of array
     };
@@ -570,7 +550,8 @@ void setup () {
     exBus.SetSensorActive( ID_GPSHEA, cfg.enab_GPSHEA != 0, sensors );
 #endif
 #ifdef VOLT
-    exBus.SetSensorActive( ID_VOLTAG, cfg.enab_VOLTAG != 0, sensors );
+    exBus.SetSensorActive( ID_VOLTA1, cfg.enab_VOLTA1 != 0, sensors );
+    exBus.SetSensorActive( ID_VOLTA2, cfg.enab_VOLTA2 != 0, sensors );
 #endif
 
     SerialUSB.begin(115200);
@@ -612,12 +593,11 @@ void setup () {
 #endif
 
 #ifdef BARO
-
     if (!wdTimeout) {
 
-        while (uint8_t ret = dpsA.begin(DPS_ADDRESS_1) != 0 ) {
+        while (uint8_t ret = dpsA.begin(DPS_ADDRESS_A) != 0 ) {
 
-            SerialUSB.printf("Init BaroA failed with: %d", ret);
+            SerialUSB.printf("Init BaroA failed with: %d\n", ret);
 
 #ifdef SERVO
             // after a chrash of baros it could be that the brownout detector triggers a reset
@@ -638,36 +618,51 @@ void setup () {
         int16_t temp_osr = 0;
         int16_t prs_mr = 5;
         int16_t prs_osr = 3;
-        dpsA.startMeasureBothCont(temp_mr, temp_osr, prs_mr, prs_osr);
+        int16_t resA = dpsA.startMeasureBothCont(temp_mr, temp_osr, prs_mr, prs_osr);
+        if ( resA != 0 ) {
+            while(1) {
+                SerialUSB.printf("startMeasure dpsA failed with: %d\n", resA);
+                delay(1000);
+            }
+        }
 
 #ifdef DUAL
-    while (uint8_t ret = dpsB.begin(DPS_ADDRESS_2) != 0) {
+        while (uint8_t ret = dpsB.begin(DPS_ADDRESS_B) != 0) {
 
-        SerialUSB.printf("Init BaroB failed with: %d",ret);
+            SerialUSB.printf("Init BaroB failed with: %d\n",ret);
 
-        #ifdef SERVO
-                    // after a chrash of baros it could be that the brownout detector triggers a reset
-                    // so start the watchdog here preventing a hang 
-                    startWatchdog();
-        #endif
+#ifdef SERVO
+            // after a chrash of baros it could be that the brownout detector triggers a reset
+            // so start the watchdog here preventing a hang 
+            startWatchdog();
+#endif
 
-                    // if no baro hardware present LED will blink slow if watchdog is not running.
-                    pinMode(PIN_LED_13, OUTPUT);
-                    digitalWrite(PIN_LED_13, !digitalRead(PIN_LED_13) );
-                    delay (500);
-    }
+            // if no baro hardware present LED will blink slow if watchdog is not running.
+            pinMode(PIN_LED_13, OUTPUT);
+            digitalWrite(PIN_LED_13, !digitalRead(PIN_LED_13) );
+            delay (500);
+        }
 
 #ifdef SERVO
         stopWatchdog();
 #endif
 
-        dpsB.startMeasureBothCont(temp_mr, temp_osr, prs_mr, prs_osr);
 
+        int16_t resB = dpsB.startMeasureBothCont(temp_mr, temp_osr, prs_mr, prs_osr);
+        if ( resB != 0 ) {
+            while (1) {
+                SerialUSB.printf("startMeasure dpsB failed with: %d\n", resB);
+                delay(1000);
+            }
+        }
 #endif
-        // calc default alfas from ms5611.delta_t for time constants chosen
-        // ms5611.delta_t depends on number of sensors and oversampling rates chosen
-        alfa_1 = deltaT / ( T1 + deltaT );
-        alfa_2 = deltaT / ( T2 + deltaT );
+        // calc default alfas from deltaT for time constants chosen and handle them separately for both sensors
+        // deltaTA and deltaTB  were both measured initial for chosen MRs and OSRs for temperature and pressure sensors
+        alfa_1A = deltaTA / ( T1 + deltaTA );
+        alfa_2A = deltaTA / ( T2 + deltaTA );
+
+        alfa_1B = deltaTB / ( T1 + deltaTB );
+        alfa_2B = deltaTB / ( T2 + deltaTB );
 
         // calc default gain from time constants chosen 
         factor = 1000000 / (T2 - T1);
@@ -684,9 +679,7 @@ void setup () {
                 i++;
             }
         }
-
 #ifdef DUAL
-
         i = 0;
         while (i < 100) {
             //SerialUSB.println(i);
@@ -708,8 +701,8 @@ void setup () {
     } // wdTimeout
 #endif //BARO
 
-    exBus.SetDeviceId(0x76, 0x32); // 0x3276
-    exBus.Start ("mini_vario", sensors, 0);
+    exBus.SetDeviceId(0x77, 0x32); // 0x3276
+    exBus.Start ("miniVario2", sensors, 0);
 
     // all build in LEDs
     pinMode(PIN_LED_13, OUTPUT);
@@ -764,19 +757,19 @@ void setup () {
     while (TCC0->SYNCBUSY.bit.PER);                 // Wait for synchronization
 
     // default routing
-    // PA04 WO[0] XIAO Pin A1
+    // PA04 WO[0] XIAO Pin A1 -> Servo3 
     TCC0->CC[0].reg = 1500;                         // default puls length, never in use
     while (TCC0->SYNCBUSY.bit.CC0);
 
-    // PA05 WO[1] XIAO Pin A9
+    // PA05 WO[1] XIAO Pin A9 -> Servo4
     TCC0->CC[1].reg = 1500;                         // default puls length, never in use
     while (TCC0->SYNCBUSY.bit.CC1);
 
-    // PA10 WO[2] XIAO Pin A2
+    // PA10 WO[2] XIAO Pin A2 -> Servo2
     TCC0->CC[2].reg = 1500;                         // default puls length, never in use
     while (TCC0->SYNCBUSY.bit.CC2);
 
-    // PA11 WO[3] XIAO Pin A3
+    // PA11 WO[3] XIAO Pin A3 -> Servo1
     TCC0->CC[3].reg = 1500;                         // default puls length, never in use
     while (TCC0->SYNCBUSY.bit.CC3);
 
@@ -814,17 +807,13 @@ void setup () {
 
 /************************* end of setup servo timer *****************************/
 
-    //startWatchdog();
-
 #endif //SERVO
-
-    //prevMue = 100000 + micros();
-    //prevMue = micros();
 
 }
 
 void loop () {
 
+#ifdef SERVO
     if (!wdRun) {
         ++loopCount;
         if ( loopCount == 10) {
@@ -840,6 +829,7 @@ void loop () {
     //        SerialUSB.println(loopCount);
     //    }
     //}
+#endif
 
 #ifdef SERVO
     if (!WDT->STATUS.bit.SYNCBUSY) {            // let it synchronize while loop is running
@@ -847,26 +837,6 @@ void loop () {
     }
 #endif
 
-    /*
-    // test worst case loop timing
-    ++loopCount;
-
-        mue = micros();
-
-        if ( loopCount > 10) {
-
-            mueDiff = mue - prevMue;
-
-            //SerialUSB.println(mueDiff);
-
-            if ( worstMueDiff < mueDiff ) {
-                worstMueDiff = mueDiff;
-                SerialUSB.println(worstMueDiff);
-            }
-        }
-
-        prevMue = mue;
-    */
 
 #ifndef DEBUG
     if ( USB->DEVICE.DADD.reg &USB_DEVICE_DADD_ADDEN ) {    // if plugged in, fast check
@@ -880,54 +850,43 @@ void loop () {
     }
 #endif
 
-
-
 #ifdef VOLT
-    uint32_t ar = analogRead(PIN_A0);
+    uint32_t ar1 = analogRead(PIN_A8);
     if (adcStart) {
-        avar = ar;
+        avar1 = ar1;
         adcStart = false;
     }
-    avar = avar - 0.01 * ( avar - (double) ar); // avarage by exponential filter
-    double voltage = (3.3 * avar ) / 409.6;     // assume 1:10 voltage divider
+    avar1 = avar1 - 0.01 * ( avar1 - (double) ar1); // avarage by exponential filter
+    double voltage1 = (3.3 * avar1 ) / 409.6;     // assume 1:10 voltage divider
+
+    uint32_t ar2 = analogRead(PIN_A0);
+    if (adcStart) {
+        avar2 = ar2;
+        adcStart = false;
+    }
+    avar2 = avar2 - 0.01 * ( avar2 - (double) ar2); // avarage by exponential filter
+    double voltage2 = (3.3 * avar2 ) / 409.6;     // assume 1:10 voltage divider
 #endif
 
 #ifdef SERVO
     if ( rcWatch + cfg.dlay_FAILSV * 1000 < millis() ) {
 
-        TCC0->CC[0].reg = cfg.srv1_FAILSV;
+        TCC0->CC[0].reg = cfg.srv3_FAILSV;
         while (TCC0->SYNCBUSY.bit.CC0);
 
-        TCC0->CC[1].reg = cfg.srv2_FAILSV;
+        TCC0->CC[1].reg = cfg.srv4_FAILSV;
         while (TCC0->SYNCBUSY.bit.CC1);
 
-        TCC0->CC[2].reg = cfg.srv3_FAILSV;
+        TCC0->CC[2].reg = cfg.srv2_FAILSV;
         while (TCC0->SYNCBUSY.bit.CC2);
 
-        TCC0->CC[3].reg = cfg.srv4_FAILSV;
+        TCC0->CC[3].reg = cfg.srv1_FAILSV;
         while (TCC0->SYNCBUSY.bit.CC3);
 
     }
 #endif
 
     if ( exBus.HasNewChannelData() ) {
-        // check timing
-        /*
-        // test RC refresh rate. frequency 100Hz comment out lines arround call of CLI 
-        ++loopCount;
-        if ( loopCount > 10) {
-
-            mue = micros();
-            mueDiff = mueDiff - 0.01 * ( mueDiff - (double) (mue - prevMue) );
-
-            SerialUSB.println(  (double) 1000000 / (double) mueDiff, 2 );
-            //SerialUSB.println( mueDiff );
-
-            prevMue = mue;
-        } else {
-            prevMue = micros();  
-        }
-        */
 
 #ifdef SERVO
         if ( servoRun ) {
@@ -939,16 +898,16 @@ void loop () {
             while (TCC0->SYNCBUSY.bit.ENABLE);              // Wait for synchronization
         }
 
-        TCC0->CC[0].reg = exBus.GetChannel(cfg.srv1_CHANNL);
+        TCC0->CC[0].reg = exBus.GetChannel(cfg.srv3_CHANNL);
         while (TCC0->SYNCBUSY.bit.CC0);
 
-        TCC0->CC[1].reg = exBus.GetChannel(cfg.srv2_CHANNL);
+        TCC0->CC[1].reg = exBus.GetChannel(cfg.srv4_CHANNL);
         while (TCC0->SYNCBUSY.bit.CC1);
 
-        TCC0->CC[2].reg = exBus.GetChannel(cfg.srv3_CHANNL);
-        while (TCC0->SYNCBUSY.bit.CC2);
+        TCC0->CC[2].reg = exBus.GetChannel(cfg.srv2_CHANNL);
+        while (TCC0->SYNCBUSY.bit.CC2)
 
-        TCC0->CC[3].reg = exBus.GetChannel(cfg.srv4_CHANNL);
+        TCC0->CC[3].reg = exBus.GetChannel(cfg.srv1_CHANNL);
         while (TCC0->SYNCBUSY.bit.CC3);
 #endif
 
@@ -969,12 +928,15 @@ void loop () {
                 t1 = T1 + T1 * ((double)channelValue / 1000 - 1 );
                 t2 = T2 + T2 * ((double)channelValue / 1000 - 1 );
 
-                // calc alfas from ms5611.delta_t for time constants chosen
-                // ms5611.delta_t depends on number of sensors and oversampling rates chosen
-                alfa_1 = deltaT / ( t1 + deltaT );
-                alfa_2 = deltaT / ( t2 + deltaT );
+                // recalc alfas from deltaT for remote controlled time constants
+                // and handle them separately for both sensors
+                alfa_1A = deltaTA / ( t1 + deltaTA );
+                alfa_2A = deltaTA / ( t2 + deltaTA );
 
-                // calc gain from time constants chosen
+                alfa_1B = deltaTB / ( t1 + deltaTB );
+                alfa_2B = deltaTB / ( t2 + deltaTB );
+
+                // calc gain from remote controlled time constants
                 factor = 1000000 / (t2 - t1);
 
                 //dtostrf(T1, 6, 0, buf);
@@ -1002,24 +964,16 @@ void loop () {
         dpsA.getContResults(temperatureA, temperatureCountA, pressureA, pressureCountA);
 
         if (pressureCountA) {
-/*
-            mic = micros();
-            micDiff = mic - prevmic;
-            micDiffAvr = micDiffAvr - 0.01 * (micDiffAvr - micDiff);
-            dtostrf(micDiffAvr, 10, 2, micDiffAvr_string);
-            SerialUSB.printf("micros: %s\n", micDiffAvr_string);
-            prevmic = mic;
-*/
-            // For debugging with logic analyzer
-            // digitalWrite(PIN_A0, HIGH);
 
             long realPressureA = pressureA[0];
 
             relativeAltitudeA = getAltitude (realPressureA, referencePressureA);
 
-            r_altitude0A = r_altitude0A - alfa_1 * (r_altitude0A - relativeAltitudeA);
+            r_altitude0A = r_altitude0A - alfa_1A * (r_altitude0A - relativeAltitudeA);
 
-            r_altitudeA = r_altitudeA -  alfa_2 * (r_altitudeA - relativeAltitudeA);
+
+#ifndef DUAL
+            r_altitudeA = r_altitudeA -  alfa_2A * (r_altitudeA - relativeAltitudeA);
 
             climb0A = (r_altitude0A - r_altitudeA) * factor;   // Factor is 1000000/dT ( 1/dT as seconds )
 
@@ -1033,45 +987,26 @@ void loop () {
             }
             climbA = climbA - dyn_alfaA * ( climbA - climb0A );
 
-            //SerialUSB.print ("A: ");
-            //SerialUSB.print (climbA);
-            //SerialUSB.println ("m/s");
-            //SerialUSB.print ("A: ");    
-            //SerialUSB.print (r_altitude0A);
-            //SerialUSB.println ("m");
-
-#ifndef DUAL
             exBus.SetSensorValue (ID_VARIOM, round ((climbA) * 100), true);
 #endif
             exBus.SetSensorValue (ID_ALTITU, round ((r_altitude0A) * 10), true);
         }
 
 #ifdef DUAL
-
         unsigned char pressureCountB = 1;
         unsigned char temperatureCountB = 1;
-
         dpsB.getContResults(temperatureB, temperatureCountB, pressureB, pressureCountB);
 
         if (pressureCountB) {
-/*
-            mic = micros();
-            micDiff = mic - prevmic;
-            micDiffAvr = micDiffAvr - 0.01 * (micDiffAvr - micDiff);
-            dtostrf(micDiffAvr, 10, 2, micDiffAvr_string);
-            SerialUSB.printf("micros: %s\n", micDiffAvr_string);
-            prevmic = mic;
-*/
-            // For debugging with logic analyzer
-            // digitalWrite(PIN_A0, HIGH);
 
             long realPressureB = pressureB[0];
 
             relativeAltitudeB = getAltitude (realPressureB, referencePressureB);
 
-            r_altitude0B = r_altitude0B - alfa_1 * (r_altitude0B - relativeAltitudeB);
 
-            r_altitudeB = r_altitudeB -  alfa_2 * (r_altitudeB - relativeAltitudeB);
+            r_altitude0B = r_altitude0B - alfa_1B * (r_altitude0B - relativeAltitudeB);
+
+            r_altitudeB = r_altitudeB -  alfa_2B * (r_altitudeB - relativeAltitudeB);
 
             climb0B = (r_altitude0B - r_altitudeB) * factor;   // Factor is 1000000/dT ( 1/dT as seconds )
 
@@ -1079,38 +1014,23 @@ void loop () {
             // time constant of filter changes dynamically
             // greater speed of change means less filtering.
             // see "Nonlinear Exponential Filter"   
-            dyn_alfaB = abs( (climbB - climb0B) / 0.4 );
+            dyn_alfaB = abs( (climbB - climb0B) / 0.6 );
             if ( dyn_alfaB >= 1 ) {
                 dyn_alfaB = 1;
             }
             climbB = climbB - dyn_alfaB * ( climbB - climb0B );
-
-            //SerialUSB.print ("B: ");
-            //SerialUSB.print (climbB);
-            //SerialUSB.println ("m/s");
-            //SerialUSB.print ("B: ");
-            //SerialUSB.print (r_altitude0B);
-            //SerialUSB.println ("m");
-
 
             exBus.SetSensorValue (ID_VARIOM, round ((climbB) * 100), true);
 
         }
 
 #endif
-
-
-
-
-
-
-
     } // wdTimeout
 #endif //BARO
 
 #ifdef VOLT
-        //voltage = 31.345;
-        exBus.SetSensorValue (ID_VOLTAG, round ((voltage) * 100 ), true); 
+        exBus.SetSensorValue (ID_VOLTA1, round ((voltage1) * 100 ), true);
+        exBus.SetSensorValue (ID_VOLTA2, round ((voltage2) * 100 ), true);
 #endif
 
 
@@ -1126,9 +1046,6 @@ void loop () {
             // calls decodeUBX() 
             parse_UBX_NAV(Serial1.read());
 
-            //input = Serial1.read();
-            //SerialUSB.print(input, HEX);
-            //SerialUSB.print(" ");
         }
 
     } // wdTimeout

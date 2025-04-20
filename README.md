@@ -91,12 +91,12 @@ The voltage should not not exceed 6V. The voltage regulator
 on the XIAO has 7V as absolut maximum rating. 4 cells of NiMh
 are probably ok. But most GNSS-modules are specified for max 5.5V
 So it's better using a 5.5V BEC or an onboard LDO regulator like the
-AMS1117 5.0V type, if the input voltage exceeds 5.5V. Power from
-1 cell LiPo is perfectly ok for the device itself and the GNSS-modul.
-The 3.3V regulator of the XIAO can power the baro-sensor-pcbs VCC-pins
-in any setup. I recommend to remove the LEDs from the baro boards in
-order to save current consumption. The baro-pcbs can also be powered
-by the 5V because they have their own LDO 3.3V regulators.
+AMS1117 5.0V type, if the input voltage exceeds 5.5V. The current baseboard
+uses an MCP1804 5V type. Power from 1 cell LiPo is perfectly ok for the
+device itself and the GNSS-modul. The 3.3V regulator of the XIAO can power
+the baro-sensor-pcbs VCC-pins in any setup. I recommend to remove the LEDs
+from the baro boards in order to save current consumption. The baro-pcbs
+can also be powered by the 5V because they have their own LDO 3.3V regulators.
 
 ## Software
 
@@ -228,10 +228,16 @@ For calibrating the voltage sensor:
 * Enable calibration
 * Write changes
 
+Note that this calibration works precisely only for
+the selected pin (VOLTA1 or VOLTA2). The deviation
+of the other voltage then depends on the accuracy of
+the choosen resistors.    
+
 Legend:
 * VARIOM Variometer
 * ALTITU Barometric Altitude
-* VOLTAG Voltage
+* VOLTA1 Voltage1
+* VOLTA2 Voltage2
 * GPSLON GPS Longtitude
 * GPSLAT GPS Latitude
 * GPSSPD GPS Speed
