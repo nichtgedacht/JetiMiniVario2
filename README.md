@@ -53,6 +53,7 @@ Please use the bootloader from here:
 https://github.com/adafruit/uf2-samdx1/releases
 This bootloader has the brown-out detector implemented.
 It prevents bootloader corruption due to unclean power cycles.
+Please find it also within the UF2 folder.
 
 ## Mechanical design
 
@@ -68,7 +69,7 @@ If 2 PCB's are in use, the sensor vwith the changed address becomes the
 encapsulated one for TEK connection.  
 
 First set the alternative address on one of the Sensors:  
-![IMG05](doc/IMG05.png)  
+![IMG06](doc/IMG06.png)  
 
 In order to encapsulate a volume by the 2 sensor PCB's 
 make both PCBs gasproof by using some epoxy on this sides:  
@@ -78,11 +79,14 @@ The sensor PCB's then can be stacked and encapsulate an air volume together with
 Please refer to first version of JetiMiniVario:  
 ![IMG04](doc/IMG04.png)  
 
+Top view
+![IMG05](doc/IMG05.png)  
+
 Sensor PCB:  
-![IMG06](doc/IMG06.png)  
+![IMG07](doc/IMG07.png)  
 
 Base PCB:  
-![IMG07](doc/IMG07.png)  
+![IMG08](doc/IMG08.png)  
 
 ## Electrical limits
 
@@ -94,9 +98,7 @@ So it's better using a 5.5V BEC or an onboard LDO regulator like the
 AMS1117 5.0V type, if the input voltage exceeds 5.5V. The current baseboard
 uses an MCP1804 5V type. Power from 1 cell LiPo is perfectly ok for the
 device itself and the GNSS-modul. The 3.3V regulator of the XIAO can power
-the baro-sensor-pcbs VCC-pins in any setup. I recommend to remove the LEDs
-from the baro boards in order to save current consumption. The baro-pcbs
-can also be powered by the 5V because they have their own LDO 3.3V regulators.
+the baro-sensor-pcbs VCC-pins in any setup.
 
 ## Software
 
