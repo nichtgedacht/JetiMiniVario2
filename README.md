@@ -237,6 +237,8 @@ the choosen resistors.
 
 Legend:
 * VARIOM Variometer
+* VARIOB in DUAL-setup Variometer from static port no TEK
+* TEKTAS True Airspeed calculated from Pressure Diff of TEK-Probe
 * ALTITU Barometric Altitude
 * VOLTA1 Voltage1
 * VOLTA2 Voltage2
@@ -253,6 +255,8 @@ Legend:
 * GPSHEA GPS Bearing
 
 As terminal emulation Putty can be used. The default settings<br>
-of Putty are ok. Just select the serial interface connected to<br>
-the device. Choose 83x36 (rows x colums) for optimal window.<br>
-Putty is available for Linux, and Windows.
+of Putty are ok.<br>
+* Just select the serial interface connected to the device<br>
+* At least 83x38 (rows x colums) are needed for a complete window.<br>
+* For proper viewing an 11 point Monospace Font is recommended.<br> 
+* Putty is available for Linux, and Windows.

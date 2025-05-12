@@ -51,7 +51,7 @@ uint32_t mic, prevmic, micDiff;
 double micDiffAvr;
 char micDiffAvr_string[20];
 
-
+long realPressureA, realPressureB;
 int32_t pressureA[1], pressureB[1];
 int32_t temperatureA[1], temperatureB[1];
 
@@ -80,6 +80,10 @@ enum {
     ID_DUMMY = 0,
 #ifdef BARO
     ID_VARIOM,
+#ifdef DUAL
+    ID_VARIOB,
+    ID_TEKTAS,
+#endif
     ID_ALTITU,
 #endif
 #ifdef GPS
@@ -480,6 +484,32 @@ void WDT_Handler() {
     while ( WDT->STATUS.bit.SYNCBUSY );               // Wait for synchronization
 }
 
+
+double tAS( long realPressureA, long realPressureB ) {
+
+    static double outTAS;
+
+    // formula used
+    // tas = 3.6 * ( sqrt( ( realPressureA - realPressureB ) * 2 / 1.2 ) );  // km/h
+
+    double pDiff = double ( realPressureA - realPressureB );
+
+    if ( pDiff < 0 ) {
+        pDiff = 0;
+    }
+
+    double tas = 3.6 * 1.291 * ( sqrt( ( pDiff ) ) );  // km/h
+
+    // smooth it a bit
+    outTAS = outTAS - 0.2 * (outTAS - tas);
+
+//#ifdef DEBUG
+    //SerialUSB.printf ("tas: %.2f km/h\n", outTAS);
+//#endif
+
+    return outTAS;
+}
+
 void setup () {
 
     // delay(10000);
@@ -509,6 +539,10 @@ void setup () {
         //id,           name,            unit,               dataType, precision, priority
 #ifdef BARO
         { ID_VARIOM,    "Vario",         "m/s",  JetiSensor::TYPE_14b, 2,         cfg.prio_VARIOM },
+#ifdef DUAL
+        { ID_VARIOB,    "VarioB",        "m/s",  JetiSensor::TYPE_14b, 2,         cfg.prio_VARIOB },
+        { ID_TEKTAS,    "TAS",           "km/h", JetiSensor::TYPE_14b, 2,         cfg.prio_TEKTAS },
+#endif
         { ID_ALTITU,    "AltRelat.",     "m",    JetiSensor::TYPE_14b, 1,         cfg.prio_ALTITU },
 #endif
 #ifdef GPS
@@ -534,6 +568,10 @@ void setup () {
     // enable sensors according to config
 #ifdef BARO
     exBus.SetSensorActive( ID_VARIOM, cfg.enab_VARIOM != 0, sensors );
+#ifdef DUAL
+    exBus.SetSensorActive( ID_VARIOB, cfg.enab_VARIOB != 0, sensors );
+    exBus.SetSensorActive( ID_TEKTAS, cfg.enab_TEKTAS != 0, sensors );
+#endif
     exBus.SetSensorActive( ID_ALTITU, cfg.enab_ALTITU != 0, sensors );
 #endif
 #ifdef GPS
@@ -965,14 +1003,12 @@ void loop () {
 
         if (pressureCountA) {
 
-            long realPressureA = pressureA[0];
+            realPressureA = pressureA[0];
 
             relativeAltitudeA = getAltitude (realPressureA, referencePressureA);
 
             r_altitude0A = r_altitude0A - alfa_1A * (r_altitude0A - relativeAltitudeA);
 
-
-#ifndef DUAL
             r_altitudeA = r_altitudeA -  alfa_2A * (r_altitudeA - relativeAltitudeA);
 
             climb0A = (r_altitude0A - r_altitudeA) * factor;   // Factor is 1000000/dT ( 1/dT as seconds )
@@ -987,7 +1023,10 @@ void loop () {
             }
             climbA = climbA - dyn_alfaA * ( climbA - climb0A );
 
+#ifndef DUAL
             exBus.SetSensorValue (ID_VARIOM, round ((climbA) * 100), true);
+#else
+            exBus.SetSensorValue (ID_VARIOB, round ((climbA) * 100), true);
 #endif
             exBus.SetSensorValue (ID_ALTITU, round ((r_altitude0A) * 10), true);
         }
@@ -999,10 +1038,9 @@ void loop () {
 
         if (pressureCountB) {
 
-            long realPressureB = pressureB[0];
+            realPressureB = pressureB[0];
 
             relativeAltitudeB = getAltitude (realPressureB, referencePressureB);
-
 
             r_altitude0B = r_altitude0B - alfa_1B * (r_altitude0B - relativeAltitudeB);
 
@@ -1022,6 +1060,8 @@ void loop () {
 
             exBus.SetSensorValue (ID_VARIOM, round ((climbB) * 100), true);
 
+            double TAS = tAS( realPressureA, realPressureB );
+            exBus.SetSensorValue (ID_TEKTAS, round ((TAS) * 100), true);
         }
 
 #endif

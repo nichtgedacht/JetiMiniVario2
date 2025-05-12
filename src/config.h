@@ -12,7 +12,7 @@
 #define CURSHOME "\033[H"               //cursor home
 #define ERASEALL "\033[2J"              //erase screen
 #define CURSBACK "\033[0G"              //cursor column 0
-#define CURS_C10 "\033[10G"               //cursor culumn 8
+#define CURS_C10 "\033[10G"             //cursor culumn 8
 #define ERASELINE "\033[0K"             //erase line
 #define BRIGHTYELLOW_FG "\033[93m"      //set foreground
 #define WHITE_FG "\033[97m"             //set foreground
@@ -26,6 +26,8 @@ typedef struct {
     boolean valid;
 
     uint8_t prio_VARIOM;
+    uint8_t prio_VARIOB;
+    uint8_t prio_TEKTAS;
     uint8_t prio_ALTITU;
     uint8_t prio_VOLTA1;
     uint8_t prio_VOLTA2;
@@ -42,6 +44,8 @@ typedef struct {
     uint8_t prio_GPSHEA;
 
     bool enab_VARIOM;
+    bool enab_VARIOB;
+    bool enab_TEKTAS;
     bool enab_ALTITU;
     bool enab_GPSLON;
     bool enab_GPSLAT;
