@@ -106,7 +106,7 @@ enum {
 };
 
 #ifdef BARO
-double referencePressureA = 0, referencePressureB = 0;
+double referencePressureA = 0, referencePressureB = 0, offsetPressureB = 0;
 double r_altitudeA = 0, r_altitude0A = 0, r_altitudeB = 0, r_altitude0B = 0; 
 double climbA = 0, climb0A = 0, climbB = 0, climb0B = 0; 
 double dyn_alfaA, dyn_alfaB, alfa_1A, alfa_2A, alfa_1B, alfa_2B, factor;
@@ -458,8 +458,12 @@ double getSeaLevel(double pressure, double altitude) {
 void altiZero(void) {
     //getSeaLevel() calculates SealevelPressure from realpressure and real altitude MSL
 #ifdef BARO
-    referencePressureA = getSeaLevel(referencePressureA, -r_altitude0A);
-    referencePressureB = getSeaLevel(referencePressureB, -r_altitude0B);
+    referencePressureA = getSeaLevel(referencePressureA, - r_altitude0A);
+#ifdef DUAL
+    referencePressureB = getSeaLevel(referencePressureB, - r_altitude0B);
+    // used for TAS, calc offset again when reset altitude to zero
+    offsetPressureB = referencePressureA - referencePressureB;
+#endif
 #endif
     resetHome = true; // GPS Home
 }
@@ -484,7 +488,7 @@ void WDT_Handler() {
     while ( WDT->STATUS.bit.SYNCBUSY );               // Wait for synchronization
 }
 
-
+#ifdef DUAL
 double tAS( long realPressureA, long realPressureB ) {
 
     static double outTAS;
@@ -492,7 +496,7 @@ double tAS( long realPressureA, long realPressureB ) {
     // formula used
     // tas = 3.6 * ( sqrt( ( realPressureA - realPressureB ) * 2 / 1.2 ) );  // km/h
 
-    double pDiff = double ( realPressureA - realPressureB );
+    double pDiff = double ( realPressureA - realPressureB - offsetPressureB );
 
     if ( pDiff < 0 ) {
         pDiff = 0;
@@ -501,7 +505,7 @@ double tAS( long realPressureA, long realPressureB ) {
     double tas = 3.6 * 1.291 * ( sqrt( ( pDiff ) ) );  // km/h
 
     // smooth it a bit
-    outTAS = outTAS - 0.2 * (outTAS - tas);
+    outTAS = outTAS - 0.4 * (outTAS - tas);
 
 //#ifdef DEBUG
     //SerialUSB.printf ("tas: %.2f km/h\n", outTAS);
@@ -509,6 +513,7 @@ double tAS( long realPressureA, long realPressureB ) {
 
     return outTAS;
 }
+#endif
 
 void setup () {
 
@@ -733,7 +738,9 @@ void setup () {
 #endif
         referencePressureA = referencePressureA / 100;
 #ifdef DUAL
-        referencePressureB = referencePressureB / 100; 
+        referencePressureB = referencePressureB / 100;
+        // used for TAS
+        offsetPressureB = referencePressureA - referencePressureB;
 #endif
 
     } // wdTimeout
@@ -874,7 +881,6 @@ void loop () {
         REG_WDT_CLEAR = WDT_CLEAR_CLEAR_KEY;    // Clear the watchdog timer
     }
 #endif
-
 
 #ifndef DEBUG
     if ( USB->DEVICE.DADD.reg &USB_DEVICE_DADD_ADDEN ) {    // if plugged in, fast check

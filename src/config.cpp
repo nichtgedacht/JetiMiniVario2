@@ -30,7 +30,7 @@ config_t getConf() {
         config.prio_GPSHEA = 3;
 
         config.enab_VARIOM = 1;
-        config.enab_VARIOB = 0;
+        config.enab_VARIOB = 1;
         config.enab_TEKTAS = 1;
         config.enab_ALTITU = 1;
 
