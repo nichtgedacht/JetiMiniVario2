@@ -502,10 +502,10 @@ double tAS( long realPressureA, long realPressureB ) {
         pDiff = 0;
     }
 
-    double tas = 3.6 * 1.291 * ( sqrt( ( pDiff ) ) );  // km/h
+    double tas = 4.6476 * ( sqrt( ( pDiff ) ) );  // km/h
 
     // smooth it a bit
-    outTAS = outTAS - 0.4 * (outTAS - tas);
+    outTAS = outTAS - 0.2 * (outTAS - tas);
 
 //#ifdef DEBUG
     //SerialUSB.printf ("tas: %.2f km/h\n", outTAS);
@@ -546,7 +546,7 @@ void setup () {
         { ID_VARIOM,    "Vario",         "m/s",  JetiSensor::TYPE_14b, 2,         cfg.prio_VARIOM },
 #ifdef DUAL
         { ID_VARIOB,    "VarioB",        "m/s",  JetiSensor::TYPE_14b, 2,         cfg.prio_VARIOB },
-        { ID_TEKTAS,    "TAS",           "km/h", JetiSensor::TYPE_14b, 2,         cfg.prio_TEKTAS },
+        { ID_TEKTAS,    "TAS",           "km/h", JetiSensor::TYPE_14b, 0,         cfg.prio_TEKTAS },
 #endif
         { ID_ALTITU,    "AltRelat.",     "m",    JetiSensor::TYPE_14b, 1,         cfg.prio_ALTITU },
 #endif
@@ -1067,7 +1067,7 @@ void loop () {
             exBus.SetSensorValue (ID_VARIOM, round ((climbB) * 100), true);
 
             double TAS = tAS( realPressureA, realPressureB );
-            exBus.SetSensorValue (ID_TEKTAS, round ((TAS) * 100), true);
+            exBus.SetSensorValue (ID_TEKTAS, round (TAS), true);
         }
 
 #endif

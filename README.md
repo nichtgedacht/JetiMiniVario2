@@ -197,6 +197,10 @@ The following items can be configured with the CLI
 
 * The RC-channel used for live adjusting the filters.<br>
 
+  This RC-channel-value is assumed to go from 1000us to 2000us.<br>
+  Time constants (Taus) of the main filter are then adjustable from about 0.4s (at 1000us)<br>
+  to about 0.8s (at 2000us)<br>
+
 * The RC-channel used to reset altitude and GNSS home position<br>
 
   The transition of channel value for reset must go from higher to lower<br>
