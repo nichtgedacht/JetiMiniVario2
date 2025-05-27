@@ -4,3 +4,6 @@
 [submodule "lib/DPS"]
 	path = lib/DPS
 	url = https://github.com/nichtgedacht/DPS.git
+[submodule "lib/DPS2"]
+	path = lib/DPS2
+	url = https://github.com/nichtgedacht/DPS2.git

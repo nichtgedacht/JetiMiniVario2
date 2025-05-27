@@ -1,25 +1,24 @@
 #include "JetiExBusProtocol.h"  //	https://github.com/nichtgedacht/JetiExBus
+#include <Wire.h>
+#include "DPS.h"                //	https://github.com/nichtgedacht/DPS2
 #include "config.h"
-#include <DPS.h>                //	https://github.com/nichtgedacht/DPS
+
 config_t cfg;
 
 JetiExBusProtocol exBus;
-DPS dpsA;
-DPS dpsB;
 
-#define DPS_ADDRESS_A 0x77  // for both values or altitude only if DUAL sensor
-#define DPS_ADDRESS_B 0x76  // for vario only if DUAL sensor
-
+// Connect to DPS
+DPS dpsA;  // gets DPS_ADDR_DEF 0x77
+DPS dpsB;  // gets DPS_ADDR_ALT 0x76
 
 #define T1 150000.0 // base time constant
 #define T2 200000.0 // base time constant
 double t1 = T1;
 double t2 = T2;
 
-#define deltaTA 30992  //measured average value, see commented out measurement
-//#define deltaTB 15977
-#define deltaTB 30992
-//char input;
+#define deltaTA 31250  // measured value differs a bit from
+                       // device to device nominal value could
+#define deltaTB 31250  // be 5% off or so.
 
 // set neutral
 uint16_t channelValue = 1500;
@@ -47,9 +46,9 @@ long worstMueDiff = 0;
 unsigned long loopCount = 0;
 
 
-uint32_t mic, prevmic, micDiff;
-double micDiffAvr;
-char micDiffAvr_string[20];
+//uint32_t mic, prevmic, micDiff;
+//double micDiffAvr;
+//char micDiffAvr_string[20];
 
 long realPressureA, realPressureB;
 int32_t pressureA[1], pressureB[1];
@@ -444,23 +443,12 @@ void stopWatchdog(void) {
     while(WDT->STATUS.bit.SYNCBUSY);
 }
 
-// Calculate altitude from Pressure & Sea level pressure
-double getAltitude(double pressure, double zeroLevelPressure) {
-    return (44330.0f * (1.0f - pow((double) pressure / (double) zeroLevelPressure, 0.1902949f)));
-}
-
-// Calculate sea level from Pressure given on specific altitude
-double getSeaLevel(double pressure, double altitude) {
-    return ((double) pressure / pow(1.0f - ((double) altitude / 44330.0f), 5.255f));
-}
-
 // resets referencePressure and set reset flag for GPS
 void altiZero(void) {
-    //getSeaLevel() calculates SealevelPressure from realpressure and real altitude MSL
 #ifdef BARO
-    referencePressureA = getSeaLevel(referencePressureA, - r_altitude0A);
+    referencePressureA = dpsA.getSeaLevel(referencePressureA, - r_altitude0A);
 #ifdef DUAL
-    referencePressureB = getSeaLevel(referencePressureB, - r_altitude0B);
+    referencePressureB = dpsB.getSeaLevel(referencePressureB, - r_altitude0B);
     // used for TAS, calc offset again when reset altitude to zero
     offsetPressureB = referencePressureA - referencePressureB;
 #endif
@@ -599,9 +587,6 @@ void setup () {
 
     SerialUSB.begin(115200);
 
-    //Wire.begin();
-    //Wire.setClock(500000L);
-
 #ifdef GPS
     if (!wdTimeout) {
 
@@ -638,9 +623,13 @@ void setup () {
 #ifdef BARO
     if (!wdTimeout) {
 
-        while (uint8_t ret = dpsA.begin(DPS_ADDRESS_A) != 0 ) {
+        Wire.begin();
+        Wire.setClock(500000L);
 
-            SerialUSB.printf("Init BaroA failed with: %d\n", ret);
+        // Connect to DPS
+        while (dpsA.begin(DPS_ADDR_DEF, &Wire, 2, DPS_EXPECTED_10_ID, DPS_EXPECTED_11_ID ) == false) {
+
+            Serial.println("Init BaroA failed");
 
 #ifdef SERVO
             // after a chrash of baros it could be that the brownout detector triggers a reset
@@ -657,22 +646,17 @@ void setup () {
         stopWatchdog();
 #endif
 
-        int16_t temp_mr = 5;
-        int16_t temp_osr = 0;
-        int16_t prs_mr = 5;
-        int16_t prs_osr = 3;
-        int16_t resA = dpsA.startMeasureBothCont(temp_mr, temp_osr, prs_mr, prs_osr);
-        if ( resA != 0 ) {
-            while(1) {
-                SerialUSB.printf("startMeasure dpsA failed with: %d\n", resA);
-                delay(1000);
-            }
-        }
+        dpsA.setPressureConfig(DPS_32HZ, DPS_16SAMPLES);
+        dpsA.setTemperatureConfig(DPS_32HZ, DPS_1SAMPLE);
+
+        // Set DPS to continuous measurements
+        dpsA.setMode(DPS_CONT_PRES_TEMP);
 
 #ifdef DUAL
-        while (uint8_t ret = dpsB.begin(DPS_ADDRESS_B) != 0) {
 
-            SerialUSB.printf("Init BaroB failed with: %d\n",ret);
+        while (dpsB.begin(DPS_ADDR_ALT, &Wire, 2, DPS_EXPECTED_10_ID, DPS_EXPECTED_11_ID ) == false) {
+
+            Serial.println("Init BaroB failed");
 
 #ifdef SERVO
             // after a chrash of baros it could be that the brownout detector triggers a reset
@@ -690,14 +674,12 @@ void setup () {
         stopWatchdog();
 #endif
 
+        dpsB.setPressureConfig(DPS_32HZ, DPS_16SAMPLES);
+        dpsB.setTemperatureConfig(DPS_32HZ, DPS_1SAMPLE);
 
-        int16_t resB = dpsB.startMeasureBothCont(temp_mr, temp_osr, prs_mr, prs_osr);
-        if ( resB != 0 ) {
-            while (1) {
-                SerialUSB.printf("startMeasure dpsB failed with: %d\n", resB);
-                delay(1000);
-            }
-        }
+        // Set DPS to continuous measurements
+        dpsB.setMode(DPS_CONT_PRES_TEMP);
+
 #endif
         // calc default alfas from deltaT for time constants chosen and handle them separately for both sensors
         // deltaTA and deltaTB  were both measured initial for chosen MRs and OSRs for temperature and pressure sensors
@@ -713,12 +695,8 @@ void setup () {
         i = 0;
         while (i < 100) {
             //SerialUSB.println(i);
-            unsigned char pressureCountA = 1;
-            unsigned char temperatureCountA = 1;
-            dpsA.getContResults(temperatureA, temperatureCountA, pressureA, pressureCountA);
-
-            if (pressureCountA ) {
-                referencePressureA += pressureA[0];
+            if (dpsA.pressureAvailable() ) {
+                referencePressureA += dpsA.readPressure();
                 i++;
             }
         }
@@ -726,12 +704,8 @@ void setup () {
         i = 0;
         while (i < 100) {
             //SerialUSB.println(i);
-            unsigned char pressureCountB = 1;
-            unsigned char temperatureCountB = 1;
-            dpsB.getContResults(temperatureB, temperatureCountB, pressureB, pressureCountB);
-
-            if (pressureCountB ) {
-                referencePressureB += pressureB[0];
+            if (dpsB.pressureAvailable() ) {
+                referencePressureB += dpsA.readPressure();
                 i++;
             }
         }
@@ -1002,16 +976,11 @@ void loop () {
 #ifdef BARO
     if (!wdTimeout) {
 
-        unsigned char pressureCountA = 1;
-        unsigned char temperatureCountA = 1;
+        if (dpsA.pressureAvailable() ) {
 
-        dpsA.getContResults(temperatureA, temperatureCountA, pressureA, pressureCountA);
+            realPressureA = dpsA.readPressure();
 
-        if (pressureCountA) {
-
-            realPressureA = pressureA[0];
-
-            relativeAltitudeA = getAltitude (realPressureA, referencePressureA);
+            relativeAltitudeA = dpsA.getAltitude (realPressureA, referencePressureA);
 
             r_altitude0A = r_altitude0A - alfa_1A * (r_altitude0A - relativeAltitudeA);
 
@@ -1038,15 +1007,12 @@ void loop () {
         }
 
 #ifdef DUAL
-        unsigned char pressureCountB = 1;
-        unsigned char temperatureCountB = 1;
-        dpsB.getContResults(temperatureB, temperatureCountB, pressureB, pressureCountB);
 
-        if (pressureCountB) {
+        if (dpsB.pressureAvailable() ) {
 
-            realPressureB = pressureB[0];
+            realPressureB = dpsB.readPressure();
 
-            relativeAltitudeB = getAltitude (realPressureB, referencePressureB);
+            relativeAltitudeB = dpsB.getAltitude (realPressureB, referencePressureB);
 
             r_altitude0B = r_altitude0B - alfa_1B * (r_altitude0B - relativeAltitudeB);
 
