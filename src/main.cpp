@@ -705,7 +705,7 @@ void setup () {
         while (i < 100) {
             //SerialUSB.println(i);
             if (dpsB.pressureAvailable() ) {
-                referencePressureB += dpsA.readPressure();
+                referencePressureB += dpsB.readPressure();
                 i++;
             }
         }
@@ -943,8 +943,9 @@ void loop () {
                 // make time constants variable
                 // channel at 100% and no trimm -> 1000 - 2000
                 // check in servo monitor !
-                t1 = T1 + T1 * ((double)channelValue / 1000 - 1 );
-                t2 = T2 + T2 * ((double)channelValue / 1000 - 1 );
+                t1 = T1 + T1 * (  ( (double)channelValue - 1000 ) / 500 );
+                t2 = T2 + T2 * (  ( (double)channelValue - 1000 ) / 500 );
+
 
                 // recalc alfas from deltaT for remote controlled time constants
                 // and handle them separately for both sensors
