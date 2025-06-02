@@ -491,13 +491,13 @@ void cliConf (void) {
 #endif
 #ifdef BARO 
                             } else if ( strncmp(key, "ctrl_CHANNL", 11 ) == 0 ) {
-                                if ( value < 16 ) {
+                                if ( value < 24 ) {
                                     config.ctrl_CHANNL = (uint8_t) value - 1;
                                 }
 #endif
 #if defined (GPS) || defined (BARO)
                             } else if ( strncmp(key, "rset_CHANNL", 11 ) == 0 ) {
-                                if ( value < 16 ) {
+                                if ( value < 24 ) {
                                     config.rset_CHANNL = (uint8_t) value - 1;
                                 }
 #endif
@@ -511,19 +511,19 @@ void cliConf (void) {
                                     config.puls_TIMING = (uint8_t) value;
                                 }
                             } else if ( strncmp(key, "srv1_CHANNL", 11 ) == 0 ) {
-                                if ( value <= 16 ) {
+                                if ( value <= 24 ) {
                                     config.srv1_CHANNL = (uint8_t) value - 1;
                                 }
                             } else if ( strncmp(key, "srv2_CHANNL", 11 ) == 0 ) {
-                                if ( value <= 16 ) {
+                                if ( value <= 24 ) {
                                     config.srv2_CHANNL = (uint8_t) value - 1;
                                 }
                             } else if ( strncmp(key, "srv3_CHANNL", 11 ) == 0 ) {
-                                if ( value <= 16 ) {
+                                if ( value <= 24 ) {
                                     config.srv3_CHANNL = (uint8_t) value - 1;
                                 }
                             } else if ( strncmp(key, "srv4_CHANNL", 11 ) == 0 ) {
-                                if ( value <= 16 ) {
+                                if ( value <= 24 ) {
                                     config.srv4_CHANNL = (uint8_t) value - 1;
                                 }
                             } else if ( strncmp(key, "srv1_FAILSV", 11 ) == 0 ) {
