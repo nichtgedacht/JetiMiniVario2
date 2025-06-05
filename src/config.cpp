@@ -491,13 +491,13 @@ void cliConf (void) {
 #endif
 #ifdef BARO 
                             } else if ( strncmp(key, "ctrl_CHANNL", 11 ) == 0 ) {
-                                if ( value < 24 ) {
+                                if ( value <= 24 ) {
                                     config.ctrl_CHANNL = (uint8_t) value - 1;
                                 }
 #endif
 #if defined (GPS) || defined (BARO)
                             } else if ( strncmp(key, "rset_CHANNL", 11 ) == 0 ) {
-                                if ( value < 24 ) {
+                                if ( value <= 24 ) {
                                     config.rset_CHANNL = (uint8_t) value - 1;
                                 }
 #endif
